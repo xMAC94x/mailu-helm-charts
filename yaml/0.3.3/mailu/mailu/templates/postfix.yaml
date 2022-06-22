@@ -90,9 +90,6 @@ spec:
             containerPort: 10025
             protocol: TCP
         resources:
-          limits:
-            cpu: 500m
-            memory: 2Gi
           requests:
             cpu: 500m
             memory: 2Gi

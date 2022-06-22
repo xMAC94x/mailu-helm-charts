@@ -52,9 +52,6 @@ spec:
             containerPort: 3310
             protocol: TCP
         resources:
-          limits:
-            cpu: 1000m
-            memory: 2Gi
           requests:
             cpu: 1000m
             memory: 1Gi

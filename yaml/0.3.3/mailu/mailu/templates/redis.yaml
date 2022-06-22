@@ -48,9 +48,6 @@ spec:
             name: redis
             protocol: TCP
         resources:
-          limits:
-            cpu: 200m
-            memory: 300Mi
           requests:
             cpu: 100m
             memory: 200Mi
