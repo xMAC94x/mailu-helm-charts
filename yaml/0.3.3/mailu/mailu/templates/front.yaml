@@ -39,6 +39,9 @@ spec:
   - name: imap-auth
     port: 10143
     protocol: TCP
+  - name: http
+    port: 80
+    protocol: TCP
 ---
 # Source: mailu/templates/front.yaml
 # This file is derived from https://github.com/Mailu/Mailu/blob/master/docs/kubernetes/mailu/front.yaml
