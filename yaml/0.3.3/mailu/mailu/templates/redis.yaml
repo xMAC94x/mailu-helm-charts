@@ -82,8 +82,3 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: mailu-storage
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-    type: RollingUpdate
