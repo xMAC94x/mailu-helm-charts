@@ -39,6 +39,10 @@ spec:
       - name: rspamd
         image: {{ .Values.rspamd.image.repository }}:{{ default .Values.mailuVersion .Values.rspamd.image.tag }}
         imagePullPolicy: Always
+        {{- with .Values.rspamd.containerSecurityContext }}
+        securityContext:
+        {{- . | toYaml | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - name: data
             subPath: rspamd
@@ -115,6 +119,10 @@ spec:
           failureThreshold: {{ default 90 .Values.rspamd.readinessProbe.failureThreshold }} 
           timeoutSeconds: {{ default 5 .Values.rspamd.readinessProbe.timeoutSeconds }} 
         {{- end }}
+        {{- with .Values.rspamd.lifecycle }}
+        lifecycle:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -129,6 +137,10 @@ spec:
             path: /usr/share/zoneinfo
             type: Directory
         {{- end }}
+  {{- with .Values.rspamd.updateStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 
 {{- if and (not .Values.persistence.single_pvc) (not .Values.rspamd_clamav_persistence.single_pvc) }}
 ---

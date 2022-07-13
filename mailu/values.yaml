@@ -105,7 +105,17 @@ postmaster: postmaster
 
 mail:
   messageSizeLimitInMegabytes: 50
-  authRatelimit: 10/minute;1000/hour
+  # Configuration to prevent brute-force attacks. See the documentation for further information: https://mailu.io/master/configuration.html
+  authRatelimitIP: 60/hour
+  authRatelimitIPv4Mask: 24
+  authRatelimitIPv6Mask: 56
+  authRatelimitUser: 100/day
+  authRatelimitExemtionLength: 86400
+  # authRatelimitExemtion:
+
+  # Configuration to reduce outgoing spam in case of an compromised account. See the documentation for further information: https://mailu.io/1.9/configuration.html?highlight=MESSAGE_RATELIMIT
+  messageRatelimit: 200/day
+  # messageRatelimitExemption:
 
 # certmanager settings
 certmanager:
@@ -135,9 +145,6 @@ front:
     requests:
       memory: 100Mi
       cpu: 100m
-    limits:
-      memory: 200Mi
-      cpu: 200m
   startupProbe:
     periodSeconds: 10
     failureThreshold: 30
@@ -150,14 +157,33 @@ front:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
+  #  postStart:
+  #    exec:
+  #      command: ["/bin/sh", "-c", "echo Hello world"]
+
   # Deployment or DaemonSet
   controller:
     kind: Deployment
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 1
+  #    # Note: remove maxSurge when choosing DaemonSet
+  #    maxSurge: 0
   nodeSelector: {}
 
   # Expose front mail ports via hostPort
   hostPort:
+    ## deprecated, please unset if you want to disable specific ports
     enabled: true
+    pop3: 110
+    pop3s: 995
+    imap: 143
+    imaps: 993
+    smtp: 25
+    smtps: 465
+    smtpd: 587
 
   # Expose front mail ports via external service (ClusterIP or LoadBalancer)
   externalService:
@@ -193,11 +219,13 @@ admin:
     #annotations:
     #  "helm.sh/resource-policy": keep
 
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
-      memory: 500Mi
-      cpu: 500m
-    limits:
       memory: 500Mi
       cpu: 500m
   podAnnotations: {}
@@ -213,6 +241,7 @@ admin:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 
 redis:
@@ -226,13 +255,15 @@ redis:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
       memory: 200Mi
       cpu: 100m
-    limits:
-      memory: 300Mi
-      cpu: 200m
   startupProbe:
     periodSeconds: 10
     failureThreshold: 30
@@ -245,6 +276,7 @@ redis:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 postfix:
   # logLevel: WARNING
@@ -257,6 +289,9 @@ postfix:
   #    capabilities:
   #      add:
   #        - SYS_CHROOT
+  sidecars: []
+  extraVolumes: []
+  initContainers: []
   persistence:
     size: 20Gi
     storageClass: ""
@@ -264,11 +299,10 @@ postfix:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  updateStrategy:
+    type: Recreate
   resources:
     requests:
-      memory: 2Gi
-      cpu: 500m
-    limits:
       memory: 2Gi
       cpu: 500m
   startupProbe:
@@ -283,6 +317,7 @@ postfix:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 dovecot:
   enabled: true
@@ -303,11 +338,13 @@ dovecot:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
-      memory: 500Mi
-      cpu: 500m
-    limits:
       memory: 500Mi
       cpu: 500m
   startupProbe:
@@ -322,6 +359,7 @@ dovecot:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
   # enable dovecot overrides
   # overrides:
   #   dovecot.conf: |
@@ -364,13 +402,15 @@ rspamd:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
       memory: 100Mi
       cpu: 100m
-    limits:
-      memory: 200Mi
-      cpu: 200m
   startupProbe: # give it 15 minutes for initial rule compilation
     periodSeconds: 10
     failureThreshold: 90
@@ -383,6 +423,7 @@ rspamd:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 clamav:
   enabled: true
@@ -398,12 +439,14 @@ clamav:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
       memory: 1Gi
-      cpu: 1000m
-    limits:
-      memory: 2Gi
       cpu: 1000m
   startupProbe: # give it 10 minutes for initial freshclam update
     periodSeconds: 10
@@ -417,6 +460,7 @@ clamav:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
   # clamav must share a volume with rspamd. This is usually enforced by the volume itself (RWO). If you use RWM volumes and want to
   # have clamav running on the same node, add the following affinity rule:
 #  affinity:
@@ -444,14 +488,16 @@ roundcube:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   uri: /roundcube
   resources:
     requests:
       memory: 100Mi
       cpu: 100m
-    limits:
-      memory: 200Mi
-      cpu: 200m
   startupProbe:
     periodSeconds: 10
     failureThreshold: 30
@@ -464,6 +510,7 @@ roundcube:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 
 webdav:
@@ -480,6 +527,11 @@ webdav:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   startupProbe:
     periodSeconds: 10
     failureThreshold: 30
@@ -492,6 +544,7 @@ webdav:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 mysql:
   image:
@@ -504,13 +557,13 @@ mysql:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  updateStrategy:
+    # This is a single-node mysql instance, so we need to shut down the old instance before starting a new
+    type: Recreate
   resources:
     requests:
       memory: 256Mi
       cpu: 100m
-    limits:
-      memory: 512Mi
-      cpu: 200m
   startupProbe:
     periodSeconds: 10
     failureThreshold: 30
@@ -523,6 +576,7 @@ mysql:
     periodSeconds: 10
     failureThreshold: 1
     timeoutSeconds: 5
+  #lifecycle:
 
 fetchmail:
   enabled: false
@@ -538,11 +592,14 @@ fetchmail:
     claimNameOverride: ""
     #annotations:
     #  "helm.sh/resource-policy": keep
+  #updateStrategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 0
+  #    maxSurge: 1
   resources:
     requests:
       memory: 100Mi
       cpu: 100m
-    limits:
-      memory: 200Mi
-      cpu: 200m
+  #lifecycle:
   delay: 600

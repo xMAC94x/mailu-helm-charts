@@ -4,7 +4,7 @@
 {{- if .Values.clamav.enabled }}
 
 {{- /* Define persistantVolume claimName */}}
-{{- $claimName := .Values.persistence.single_pvc | ternary (include "mailu.claimName" .) .Values.rspamd.persistence.claimNameOverride | default (printf "%s-clamav" (include "mailu.fullname" .)) }}
+{{- $claimName := .Values.persistence.single_pvc | ternary (include "mailu.claimName" .) .Values.clamav.persistence.claimNameOverride | default (printf "%s-clamav" (include "mailu.fullname" .)) }}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -38,6 +38,10 @@ spec:
       - name: clamav
         image: {{ .Values.clamav.image.repository }}:{{ default .Values.mailuVersion .Values.clamav.image.tag }}
         imagePullPolicy: Always
+        {{- with .Values.clamav.containerSecurityContext }}
+        securityContext:
+        {{- . | toYaml | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - name: data
             subPath: clamav
@@ -89,6 +93,10 @@ spec:
           failureThreshold: {{ default 1 .Values.clamav.readinessProbe.failureThreshold }} 
           timeoutSeconds: {{ default 5 .Values.clamav.readinessProbe.timeoutSeconds }} 
         {{- end }}
+        {{- with .Values.clamav.lifecycle }}
+        lifecycle:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -103,11 +111,10 @@ spec:
             path: /usr/share/zoneinfo
             type: Directory
         {{- end }}
+  {{- with .Values.clamav.updateStrategy }}
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 
 {{- if and (not .Values.persistence.single_pvc) (not .Values.rspamd_clamav_persistence.single_pvc) }}
 ---
