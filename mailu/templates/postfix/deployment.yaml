@@ -133,6 +133,9 @@ spec:
                 - -c
                 - 'echo QUIT|nc localhost 25|grep "220 .* ESMTP Postfix"'
           {{- end }}
+        {{- if .Values.postfix.sidecars }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.postfix.sidecars "context" $) | nindent 8 }}
+        {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
